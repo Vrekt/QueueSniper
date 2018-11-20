@@ -5,7 +5,7 @@ QueueSniper is a discord bot for Fortnite discord servers that host player snipe
 Add QueueSniper to your discord server via this link:
 https://discordapp.com/oauth2/authorize?&client_id=513096941693960223&scope=bot
 
-Once QueueSniper has joined run the command .setup and QueueSniper will guide you through the setup process.
+Once QueueSniper has joined make sure it has an administrator role and run the command .setup and QueueSniper will guide you through the setup process.
 
 # Help
 refer to .help
