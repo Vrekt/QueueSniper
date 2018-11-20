@@ -12,6 +12,8 @@ refer to .help
 
 # Screenshots
 
-https://i.imgur.com/NYVHhli.png
-https://i.imgur.com/BKuC6f2.png
-https://i.imgur.com/1twqCrW.png
+![alt text](https://i.imgur.com/NYVHhli.png)
+
+![alt text](https://i.imgur.com/BKuC6f2.png)
+
+![alt text](https://i.imgur.com/1twqCrW.png)
