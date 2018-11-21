@@ -2,6 +2,7 @@ package me.vrekt.queuesniper;
 
 import me.vrekt.queuesniper.database.DatabaseManager;
 import me.vrekt.queuesniper.listener.CommandListener;
+import me.vrekt.queuesniper.listener.GuildListener;
 import net.dv8tion.jda.core.AccountType;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDABuilder;
@@ -56,6 +57,7 @@ class QSEntry {
             jda.shutdownNow();
         } else {
             jda.addEventListener(new CommandListener(jda));
+            jda.addEventListener(new GuildListener());
         }
     }
 

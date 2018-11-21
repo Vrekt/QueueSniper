@@ -1,11 +1,13 @@
 package me.vrekt.queuesniper.database;
 
+import me.vrekt.queuesniper.QSLogger;
 import me.vrekt.queuesniper.guild.GuildConfiguration;
 import me.vrekt.queuesniper.guild.RawGuildConfiguration;
 import me.vrekt.queuesniper.guild.setup.GuildSetupConfiguration;
 import me.vrekt.queuesniper.utility.CheckUtility;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.Guild;
+import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Role;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.VoiceChannel;
@@ -56,7 +58,7 @@ public class DatabaseManager {
     private boolean loadAsync(final JDA jda) {
         File file = new File("database.yaml");
         if (!file.exists()) {
-            System.out.println("Could not find database file 'database.yaml' ensure it is in the same directory as this jar!");
+            QSLogger.log(null, "Could not find database file 'database.yaml' ensure it is in the same directory as this jar!");
             return false;
         }
         try {
@@ -79,6 +81,7 @@ public class DatabaseManager {
                         continue;
                     }
 
+                    Member self = guild.getSelfMember();
                     Role administratorRole = guild.getRoleById(rawGuildConfiguration.getAdministratorRoleId());
                     Role announcementRole = guild.getRoleById(rawGuildConfiguration.getAnnouncementRoleId());
 
@@ -87,15 +90,21 @@ public class DatabaseManager {
 
                     VoiceChannel countdownChannel = guild.getVoiceChannelById(rawGuildConfiguration.getCountdownChannelId());
                     int countdownTimeout = rawGuildConfiguration.getCountdownTimeout();
-                    if (CheckUtility.anyNull(administratorRole, announcementRole, announcementChannel, playerCodesChannel, countdownChannel)) {
+
+                    if (CheckUtility.anyNull(self, administratorRole, announcementRole, announcementChannel, playerCodesChannel,
+                            countdownChannel)) {
                         // no longer valid
                         continue;
                     }
 
-                    GuildConfiguration.add(new GuildConfiguration(id).setAdministratorRole(administratorRole).
-                            setAnnouncementRole(announcementRole).setAnnouncementChannel(announcementChannel).
+                    GuildConfiguration.add(new GuildConfiguration(id).setGuild(guild).setSelf(self).
+                            setGuildSetupConfiguration(new GuildSetupConfiguration(true)).
+                            setAdministratorRole(administratorRole).
+                            setAnnouncementRole(announcementRole).
+                            setPublicRole(guild.getPublicRole()).
+                            setAnnouncementChannel(announcementChannel).
                             setPlayerCodesChannel(playerCodesChannel).setCountdownChannel(countdownChannel)
-                            .setCountdownTimeout(countdownTimeout).setGuildSetupConfiguration(new GuildSetupConfiguration(true)).setGuild(guild));
+                            .setCountdownTimeout(countdownTimeout));
                 }
             }
 
@@ -104,7 +113,7 @@ public class DatabaseManager {
             exception.printStackTrace();
             return false;
         }
-        System.out.println("Finished reading database");
+        QSLogger.log(null, "Finished reading database");
         return true;
     }
 
@@ -133,7 +142,7 @@ public class DatabaseManager {
      */
     private boolean saveAsync(File file) {
         if (!file.exists()) {
-            System.out.println("Could not find database file 'database.yaml' ensure it is in the same directory as this jar!");
+            QSLogger.log(null, "Could not find database file 'database.yaml' ensure it is in the same directory as this jar!");
             return false;
         }
 
@@ -153,7 +162,7 @@ public class DatabaseManager {
             data.forEach((id, guildConfiguration) -> {
                 RawGuildConfiguration raw = guildConfiguration.dump();
                 if (raw == null) {
-                    System.out.println("Found invalid guild in configuration, ignoring for now.");
+                    QSLogger.log(null, "Found invalid guild in configuration, ignoring for now.");
                 } else {
                     dump.put(id, raw);
                 }

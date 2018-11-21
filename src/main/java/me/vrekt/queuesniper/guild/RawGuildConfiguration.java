@@ -2,12 +2,16 @@ package me.vrekt.queuesniper.guild;
 
 public class RawGuildConfiguration {
 
-    private String guildId, administratorRoleId, announcementRoleId, announcementChannelId, playerCodesChannelId, countdownChannelId;
+    private String guildId, administratorRoleId, announcementRoleId, announcementChannelId, playerCodesChannelId,
+            countdownChannelId;
     private int countdownTimeout;
 
-    public RawGuildConfiguration() {}
+    public RawGuildConfiguration() {
+    }
 
-    public RawGuildConfiguration(String guildId, String administratorRoleId, String announcementRoleId, String announcementChannelId, String playerCodesChannelId, String countdownChannelId, int countdownTimeout) {
+    public RawGuildConfiguration(String guildId, String administratorRoleId, String announcementRoleId,
+                                 String announcementChannelId,
+                                 String playerCodesChannelId, String countdownChannelId, int countdownTimeout) {
         this.guildId = guildId;
         this.administratorRoleId = administratorRoleId;
         this.announcementRoleId = announcementRoleId;

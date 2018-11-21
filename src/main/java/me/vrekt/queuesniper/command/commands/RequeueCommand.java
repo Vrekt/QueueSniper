@@ -3,8 +3,6 @@ package me.vrekt.queuesniper.command.commands;
 import me.vrekt.queuesniper.command.Command;
 import me.vrekt.queuesniper.guild.GuildConfiguration;
 import me.vrekt.queuesniper.match.MatchQueueHandler;
-import me.vrekt.queuesniper.match.Playlist;
-import me.vrekt.queuesniper.match.QueuedMatch;
 import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.Member;
@@ -18,7 +16,6 @@ public class RequeueCommand extends Command {
 
     public RequeueCommand(String name, String[] aliases, long cooldown, MatchQueueHandler queueHandler, JDA jda) {
         super(name, aliases, cooldown, jda);
-
         this.queueHandler = queueHandler;
     }
 
@@ -39,6 +36,7 @@ public class RequeueCommand extends Command {
         } else {
             embedBuilder.setTitle("**ALL** players are required to re-queue! Please re-enter the voice channel '" + configuration.getCountdownChannel().getName() + "'. Another countdown will be started in " + configuration.getCountdownTimeout() + " seconds!");
         }
+
         sentIn.sendMessage(embedBuilder.build()).queue();
         sentIn.sendMessage(configuration.getAnnouncementRole().getAsMention()).queue();
 
@@ -48,8 +46,8 @@ public class RequeueCommand extends Command {
                         configuration.getCountdownChannel().getName() + "'!",
                 false).addField("Instructions: ", "- A 3 second countdown will be started, click Play in-game once you hear 'GO'",
                 false);
+
         sentIn.sendMessage(embedBuilder.build()).queue();
-        // TODO PLAYLIST HANDLING.
-        queueHandler.queue(configuration, new QueuedMatch(configuration, Playlist.SOLO));
+        queueHandler.queue(configuration);
     }
 }

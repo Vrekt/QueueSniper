@@ -2,7 +2,7 @@ package me.vrekt.queuesniper.listener;
 
 import me.vrekt.queuesniper.command.CommandExecutor;
 import me.vrekt.queuesniper.guild.GuildConfiguration;
-import me.vrekt.queuesniper.utility.PermissionUtility;
+import me.vrekt.queuesniper.permission.PermissionChecker;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.ChannelType;
 import net.dv8tion.jda.core.entities.Guild;
@@ -32,7 +32,7 @@ public class CommandListener {
             Member member = event.getMember();
             Guild guild = event.getGuild();
             GuildConfiguration configuration = GuildConfiguration.getFromId(guild.getId());
-            if (PermissionUtility.isAdministrator(member, configuration.getAdministratorRole())) {
+            if (PermissionChecker.isAdministrator(member, configuration.getAdministratorRole())) {
                 commandExecutor.executeCommand(content, member, event.getTextChannel(), configuration);
             }
         }

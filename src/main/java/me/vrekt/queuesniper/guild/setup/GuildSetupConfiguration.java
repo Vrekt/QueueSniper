@@ -17,7 +17,7 @@ import java.util.List;
 public class GuildSetupConfiguration {
 
     private int setupStep;
-    private boolean setup;
+    private boolean setup = false;
 
     private TextChannel monitor;
     private Member administrator;
@@ -32,8 +32,6 @@ public class GuildSetupConfiguration {
     }
 
     public String checkAndReturnOutput(String userInput, Guild guild, GuildConfiguration configuration) {
-        if (setup) return "QueueSniper is already setup in this server!";
-
         SetupStep step = SetupStep.values()[setupStep];
         if (userInput == null) return step.getInstructions();
 
@@ -79,6 +77,7 @@ public class GuildSetupConfiguration {
         setupStep++;
         if (setupStep >= SetupStep.values().length) {
             setup = true;
+            setupStep = 0;
 
             monitor.getJDA().removeEventListener(this);
             return "QueueSniper is now ready for use! Refer to (.help) for help.";

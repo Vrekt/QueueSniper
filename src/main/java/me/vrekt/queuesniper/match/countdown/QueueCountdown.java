@@ -10,9 +10,12 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
+import me.vrekt.queuesniper.QSLogger;
 import me.vrekt.queuesniper.match.countdown.lavaplayer.LavaPlayerSendHandler;
+import me.vrekt.queuesniper.permission.PermissionChecker;
 import net.dv8tion.jda.core.audio.SpeakingMode;
 import net.dv8tion.jda.core.entities.Guild;
+import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.VoiceChannel;
 import net.dv8tion.jda.core.managers.AudioManager;
 
@@ -25,6 +28,12 @@ public class QueueCountdown {
     }
 
     public void countdown(Guild guild, VoiceChannel channel) {
+
+        Member self = guild.getSelfMember();
+        if (!PermissionChecker.hasVoicePermissions(channel, self)) {
+            return;
+        }
+
         final AudioPlayer player = playerManager.createPlayer();
         LavaPlayerSendHandler sendHandler = new LavaPlayerSendHandler(player);
 
@@ -55,7 +64,7 @@ public class QueueCountdown {
 
             @Override
             public void noMatches() {
-                System.out.println("Could not find countdown audio!");
+                QSLogger.log(null, "Could not find countdown audio!");
             }
 
             @Override

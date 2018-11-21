@@ -3,6 +3,7 @@ package me.vrekt.queuesniper.command.commands;
 import me.vrekt.queuesniper.command.Command;
 import me.vrekt.queuesniper.guild.GuildConfiguration;
 import me.vrekt.queuesniper.guild.setup.GuildSetupConfiguration;
+import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.TextChannel;
@@ -15,18 +16,17 @@ public class SetupCommand extends Command {
 
     @Override
     public void execute(String[] args, Member from, TextChannel sentIn, GuildConfiguration configuration) {
-        final GuildSetupConfiguration temporaryConfiguration = configuration.getSetupConfiguration();
-        if (configuration.getGuild() == null) {
-            configuration.setGuild(sentIn.getGuild());
-        }
-        if (temporaryConfiguration == null) {
-            GuildSetupConfiguration setupConfiguration = new GuildSetupConfiguration(sentIn, from);
-            configuration.setGuildSetupConfiguration(setupConfiguration);
-            jda.addEventListener(setupConfiguration);
+        EmbedBuilder permissions = new EmbedBuilder();
+        permissions.setTitle("Thanks for using QueueSniper! Please make sure the following permissions are set for QueueSniper:");
+        permissions.addField("Text Permissions: ", "**Send Messages**, **Read Messages**, **Read Message History**", false);
+        permissions.addField("Voice Permissions: ", "**Connect**, **Speak**, **Use Voice Activity**, **Priority Speaker**", false);
+        permissions.addField("General Permissions: ", "**Manage Channels**", false);
+        sentIn.sendMessage(permissions.build()).queue();
 
-            sentIn.sendMessage(setupConfiguration.checkAndReturnOutput(null, sentIn.getGuild(), configuration)).queue();
-        } else {
-            sentIn.sendMessage(temporaryConfiguration.checkAndReturnOutput(null, sentIn.getGuild(), configuration)).queue();
-        }
+        GuildSetupConfiguration setupConfiguration = new GuildSetupConfiguration(sentIn, from);
+        configuration.setGuildSetupConfiguration(setupConfiguration);
+        jda.addEventListener(setupConfiguration);
+
+        sentIn.sendMessage(setupConfiguration.checkAndReturnOutput(null, sentIn.getGuild(), configuration)).queue();
     }
 }

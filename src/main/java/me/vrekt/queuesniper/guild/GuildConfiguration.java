@@ -3,6 +3,7 @@ package me.vrekt.queuesniper.guild;
 import me.vrekt.queuesniper.guild.setup.GuildSetupConfiguration;
 import me.vrekt.queuesniper.utility.CheckUtility;
 import net.dv8tion.jda.core.entities.Guild;
+import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Role;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.VoiceChannel;
@@ -12,16 +13,21 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class GuildConfiguration implements IGuildConfiguration {
     private static final ConcurrentHashMap<String, GuildConfiguration> CONFIGURATION_MAP = new ConcurrentHashMap<>();
-    private GuildSetupConfiguration setupConfiguration;
-
-    private Guild guild;
 
     private final String guildId;
+    private Guild guild;
+    private Member self;
+
+    private GuildSetupConfiguration setupConfiguration;
+
     private Role administratorRole;
     private Role announcementRole;
+    private Role publicRole;
+
     private TextChannel announcementChannel;
     private TextChannel playerCodesChannel;
     private VoiceChannel countdownChannel;
+
     private int countdownTimeout;
 
     public GuildConfiguration(String guildId) {
@@ -72,6 +78,16 @@ public class GuildConfiguration implements IGuildConfiguration {
         return this;
     }
 
+    public Member getSelf() {
+        return self;
+    }
+
+    @Override
+    public GuildConfiguration setSelf(Member self) {
+        this.self = self;
+        return this;
+    }
+
     public GuildSetupConfiguration getSetupConfiguration() {
         return setupConfiguration;
     }
@@ -103,6 +119,16 @@ public class GuildConfiguration implements IGuildConfiguration {
     @Override
     public GuildConfiguration setAnnouncementRole(Role announcementRole) {
         this.announcementRole = announcementRole;
+        return this;
+    }
+
+    public Role getPublicRole() {
+        return publicRole;
+    }
+
+    @Override
+    public GuildConfiguration setPublicRole(Role publicRole) {
+        this.publicRole = publicRole;
         return this;
     }
 
