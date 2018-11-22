@@ -91,20 +91,17 @@ public class DatabaseManager {
                     VoiceChannel countdownChannel = guild.getVoiceChannelById(rawGuildConfiguration.getCountdownChannelId());
                     int countdownTimeout = rawGuildConfiguration.getCountdownTimeout();
 
-                    if (CheckUtility.anyNull(self, administratorRole, announcementRole, announcementChannel, playerCodesChannel,
+                    if (CheckUtility.anyNull(administratorRole, announcementRole, announcementChannel, playerCodesChannel,
                             countdownChannel)) {
-                        // no longer valid
+                        // QueueSniper needs to be setup again
+                        QSLogger.log(null, "Guild: " + id + ":" + guild.getName() + " will need to be setup again.");
+                        GuildConfiguration.add(new GuildConfiguration(id, guild, self, guild.getPublicRole()).
+                                setGuildSetupConfiguration(new GuildSetupConfiguration(false)));
                         continue;
                     }
 
-                    GuildConfiguration.add(new GuildConfiguration(id).setGuild(guild).setSelf(self).
-                            setGuildSetupConfiguration(new GuildSetupConfiguration(true)).
-                            setAdministratorRole(administratorRole).
-                            setAnnouncementRole(announcementRole).
-                            setPublicRole(guild.getPublicRole()).
-                            setAnnouncementChannel(announcementChannel).
-                            setPlayerCodesChannel(playerCodesChannel).setCountdownChannel(countdownChannel)
-                            .setCountdownTimeout(countdownTimeout));
+                    GuildConfiguration configuration = new GuildConfiguration(id, guild, self, guild.getPublicRole());
+                    GuildConfiguration.add(configuration.setGuildSetupConfiguration(new GuildSetupConfiguration(true)).setAdministratorRole(administratorRole).setAnnouncementRole(announcementRole).setAnnouncementChannel(announcementChannel).setPlayerCodesChannel(playerCodesChannel).setCountdownChannel(countdownChannel).setCountdownTimeout(countdownTimeout));
                 }
             }
 
@@ -161,9 +158,7 @@ public class DatabaseManager {
 
             data.forEach((id, guildConfiguration) -> {
                 RawGuildConfiguration raw = guildConfiguration.dump();
-                if (raw == null) {
-                    QSLogger.log(null, "Found invalid guild in configuration, ignoring for now.");
-                } else {
+                if (raw != null) {
                     dump.put(id, raw);
                 }
             });
@@ -182,7 +177,16 @@ public class DatabaseManager {
      */
     public void attemptSave() {
         final ExecutorService service = Executors.newSingleThreadExecutor();
-        service.execute(() -> saveAsync(new File("database-backup-" + System.currentTimeMillis() + ".yaml")));
+        File f = new File("database-backup-" + System.currentTimeMillis() + ".yaml");
+        try {
+            boolean t = f.createNewFile();
+            if (t) {
+                service.execute(() -> saveAsync(f));
+            }
+
+        } catch (IOException exception) {
+            System.out.println("failed to backup database :(");
+        }
     }
 
 }

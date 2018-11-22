@@ -21,6 +21,11 @@ public class RequeueCommand extends Command {
 
     @Override
     public void execute(String[] args, Member from, TextChannel sentIn, GuildConfiguration configuration) {
+        if (!configuration.getSetupConfiguration().isSetup()) {
+            sentIn.sendMessage("You must setup QueueSniper before using this command, refer to '.setup'.").queue();
+            return;
+        }
+
         StringBuilder builder = new StringBuilder();
 
         EmbedBuilder embedBuilder = new EmbedBuilder();

@@ -20,7 +20,6 @@ public class MatchQueueHandler {
     private final Map<GuildConfiguration, List<MatchCollector>> startedMatches = new HashMap<>();
     private final QueueCountdown queueCountdown = new QueueCountdown();
     private final JDA jda;
-    private long log = System.currentTimeMillis();
 
     public MatchQueueHandler(JDA jda) {
         this.jda = jda;
@@ -39,10 +38,6 @@ public class MatchQueueHandler {
 
     private void enqueue() {
         try {
-            if (System.currentTimeMillis() - log >= 10000) {
-                QSLogger.log(null, "QUEUE UPDATE: QUEUED: " + queuedMatches.size() + " STARTED: " + startedMatches.size());
-                log = System.currentTimeMillis();
-            }
             Iterator<GuildConfiguration> queueConfigurationIterator = queuedMatches.keySet().iterator();
             while (queueConfigurationIterator.hasNext()) {
                 GuildConfiguration configuration = queueConfigurationIterator.next();

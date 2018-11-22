@@ -63,7 +63,8 @@ public class MatchCollector {
 
         servers.forEach((serverId, players) -> {
             inline++;
-            serverCodes.addField("ID: " + serverId, String.join(System.lineSeparator(), players), true);
+            serverCodes.addField("ID: " + serverId + " (" + players.size() + " players)", String.join(System.lineSeparator(), players),
+                    true);
             if (inline % 2 == 0) {
                 serverCodes.addBlankField(true);
             }
@@ -84,7 +85,7 @@ public class MatchCollector {
     }
 
     public void cleanup() {
-        QSLogger.log(configuration, "Finished collecting IDs, match has been started.");
+        QSLogger.log(configuration, "Finished collecting IDs, match has been started. Total players: " + players.size());
 
         if (PermissionChecker.hasGeneralPermissions(codesChannel, configuration.getSelf())) {
             codesChannel.putPermissionOverride(configuration.getPublicRole()).setDeny(Permission.MESSAGE_WRITE).queue();

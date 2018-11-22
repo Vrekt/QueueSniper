@@ -34,6 +34,13 @@ public class GuildConfiguration implements IGuildConfiguration {
         this.guildId = guildId;
     }
 
+    public GuildConfiguration(String guildId, Guild guild, Member self, Role publicRole) {
+        this.guildId = guildId;
+        this.guild = guild;
+        this.self = self;
+        this.publicRole = publicRole;
+    }
+
     /**
      * Retrieve the GuildConfiguration.
      *

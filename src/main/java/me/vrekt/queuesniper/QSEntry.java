@@ -48,7 +48,7 @@ class QSEntry {
 
     @SubscribeEvent
     public void onJdaReady(ReadyEvent event) {
-        System.out.println("JDA is ready! Starting QueueSniper core.");
+        QSLogger.log(null, "JDA is ready! Starting...");
 
         JDA jda = event.getJDA();
         boolean tryLoad = databaseManager.load(jda);

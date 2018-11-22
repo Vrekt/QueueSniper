@@ -26,7 +26,7 @@ public class StartCommand extends Command {
             return;
         }
 
-        if (configuration.getSetupConfiguration() == null || !configuration.getSetupConfiguration().isSetup()) {
+        if (!configuration.getSetupConfiguration().isSetup()) {
             sentIn.sendMessage("You must setup QueueSniper before using this command (.setup)").queue();
             return;
         }
