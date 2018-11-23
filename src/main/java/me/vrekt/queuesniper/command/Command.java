@@ -38,6 +38,6 @@ public abstract class Command {
         return cooldown;
     }
 
-    public abstract void execute(String[] args, final Member from, final TextChannel sentIn, final GuildConfiguration configuration);
+    public abstract boolean execute(String[] args, final Member from, final TextChannel sentIn, final GuildConfiguration configuration);
 
 }

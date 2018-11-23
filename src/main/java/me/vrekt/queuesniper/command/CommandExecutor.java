@@ -6,10 +6,9 @@ import me.vrekt.queuesniper.command.commands.RequeueCommand;
 import me.vrekt.queuesniper.command.commands.SetupCommand;
 import me.vrekt.queuesniper.command.commands.StartCommand;
 import me.vrekt.queuesniper.guild.GuildConfiguration;
-import me.vrekt.queuesniper.match.MatchQueueHandler;
+import me.vrekt.queuesniper.match.MatchHandler;
 import me.vrekt.queuesniper.permission.PermissionChecker;
 import net.dv8tion.jda.core.JDA;
-import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.TextChannel;
 
@@ -28,13 +27,14 @@ public class CommandExecutor {
     }
 
     public void initializeCommands() {
-        QSLogger.log(null, "Registering commands {}");
+        QSLogger.log("Registering commands {Help, Setup, Start, Requeue}");
 
-        final MatchQueueHandler queueHandler = new MatchQueueHandler(jda);
-        commands.add(new HelpCommand("help", new String[]{}, 1000, jda));
-        commands.add(new SetupCommand("setup", new String[]{}, 1000, jda));
-        commands.add(new StartCommand("start", new String[]{}, 60000, queueHandler, jda));
-        commands.add(new RequeueCommand("requeue", new String[]{"req", "restart"}, 30000, queueHandler, jda));
+        commands.add(new SetupCommand("setup", new String[]{"register"}, 1000, jda));
+        commands.add(new HelpCommand("help", new String[]{"halp", "permissions"}, 1000, jda));
+
+        MatchHandler handler = new MatchHandler(jda);
+        commands.add(new StartCommand("start", new String[]{"queue", "run"}, 30000, handler, jda));
+        commands.add(new RequeueCommand("requeue", new String[]{"requeue", "req", "restart"}, 30000, handler, jda));
     }
 
     /**
@@ -50,13 +50,7 @@ public class CommandExecutor {
         String[] arguments = input.split(" ");
         String commandName = arguments[0];
 
-        Guild guild = configuration.getGuild();
-        if (guild == null) {
-            configuration.setGuild(sentIn.getGuild());
-            guild = sentIn.getGuild();
-        }
-        if (!PermissionChecker.hasTextPermissions(sentIn, guild.getSelfMember())) {
-            // notify them of missing permissions
+        if (!PermissionChecker.hasTextPermissions(sentIn, configuration.getSelf())) {
             return;
         }
 
@@ -82,7 +76,13 @@ public class CommandExecutor {
                     history.put(execute, System.currentTimeMillis());
                 }
             }
-            execute.execute(arguments, from, sentIn, configuration);
+            boolean result = execute.execute(arguments, from, sentIn, configuration);
+            if (!result) {
+                // remove from cooldown
+                if (guildCommandHistory.containsKey(configuration)) {
+                    guildCommandHistory.get(configuration).remove(execute);
+                }
+            }
         }
     }
 

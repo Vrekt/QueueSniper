@@ -1,8 +1,7 @@
 package me.vrekt.queuesniper;
 
 import me.vrekt.queuesniper.database.DatabaseManager;
-import me.vrekt.queuesniper.listener.CommandListener;
-import me.vrekt.queuesniper.listener.GuildListener;
+import me.vrekt.queuesniper.listener.ListenerRegister;
 import net.dv8tion.jda.core.AccountType;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDABuilder;
@@ -11,8 +10,9 @@ import net.dv8tion.jda.core.hooks.AnnotatedEventManager;
 import net.dv8tion.jda.core.hooks.SubscribeEvent;
 
 import javax.security.auth.login.LoginException;
+import java.io.File;
 
-class QSEntry {
+public class QSEntry {
 
     private final DatabaseManager databaseManager = new DatabaseManager();
 
@@ -30,11 +30,11 @@ class QSEntry {
     }
 
     private void shutdown() {
-        System.out.println("Attempting to save database before shutting down... please wait.");
-        boolean trySave = databaseManager.save();
-        if (!trySave) {
-            System.out.println("Database could not save! Attempting to dump to another file.");
-            databaseManager.attemptSave();
+        QSLogger.log("Attempting to save database before shutting down... please wait.");
+        boolean save = databaseManager.save(new File("database.yaml"));
+        if (!save) {
+            QSLogger.log("Could not save to main database file, attempting backup.");
+            databaseManager.save(new File("database-save-" + System.currentTimeMillis() + ".yaml"));
         }
     }
 
@@ -42,23 +42,24 @@ class QSEntry {
         try {
             new JDABuilder(AccountType.BOT).setToken(token).setEventManager(new AnnotatedEventManager()).addEventListener(this).build();
         } catch (LoginException exception) {
-            System.out.println("The token is invalid!");
+            QSLogger.log("Invalid token, could not start.");
         }
     }
 
     @SubscribeEvent
-    public void onJdaReady(ReadyEvent event) {
-        QSLogger.log(null, "JDA is ready! Starting...");
+    public void onReady(ReadyEvent event) {
+        QSLogger.log("JDA is ready. Starting QueueSniper....");
 
         JDA jda = event.getJDA();
-        boolean tryLoad = databaseManager.load(jda);
-        if (!tryLoad) {
-            System.out.println("Could not load database. Shutting down..");
-            jda.shutdownNow();
+        boolean load = databaseManager.load(jda);
+        if (!load) {
+            QSLogger.log("Could not load database! Exiting...");
+            Runtime.getRuntime().halt(0);
         } else {
-            jda.addEventListener(new CommandListener(jda));
-            jda.addEventListener(new GuildListener());
+            QSLogger.log("Finished reading database!");
+            ListenerRegister.register(jda);
         }
+
     }
 
 }

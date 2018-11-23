@@ -19,15 +19,13 @@ public class PermissionChecker {
 
     private static final Permission[] GENERAL_PERMISSIONS = new Permission[]{Permission.MANAGE_CHANNEL};
 
-    public static boolean isAdministrator(Member member, Role administrator) {
-        return member.hasPermission(Permission.ADMINISTRATOR) || (administrator != null && member.getRoles().contains(administrator));
+    public static boolean canControl(Member member, Role control) {
+        return member.hasPermission(Permission.ADMINISTRATOR) || (control != null && member.getRoles().contains(control));
     }
-
 
     public static boolean hasTextPermissions(TextChannel channel, Member self) {
         return PermissionUtil.checkPermission(channel, self, TEXT_PERMISSIONS);
     }
-
 
     public static boolean hasVoicePermissions(VoiceChannel channel, Member self) {
         return PermissionUtil.checkPermission(channel, self, VOICE_PERMISSIONS);

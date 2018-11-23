@@ -16,7 +16,7 @@ public class HelpCommand extends Command {
     }
 
     @Override
-    public void execute(String[] args, Member from, TextChannel sentIn, GuildConfiguration configuration) {
+    public boolean execute(String[] args, Member from, TextChannel sentIn, GuildConfiguration configuration) {
         EmbedBuilder message = new EmbedBuilder();
         message.setColor(new Color(64, 64, 64)).setAuthor("QueueSniper help").setTitle("Administrator commands: ");
 
@@ -24,6 +24,15 @@ public class HelpCommand extends Command {
         message.addField(".start <playlist>", "- This is the default command to start snipe matches.", false);
         message.addField(".requeue <server ids>", " - This command will alert players that they should requeue. If no server ids are " +
                 "entered, players will be notified it is a full requeue.", false);
+
+        EmbedBuilder permissions = new EmbedBuilder();
+        permissions.setTitle("Required permissions: ");
+        permissions.addField("Text Permissions: ", "**Send Messages**, **Read Messages**, **Read Message History**", false);
+        permissions.addField("Voice Permissions: ", "**Connect**, **Speak**, **Use Voice Activity**, **Priority Speaker**", false);
+        permissions.addField("General Permissions: ", "**Manage Channels**", false);
+
+        sentIn.sendMessage(permissions.build()).queue();
         sentIn.sendMessage(message.build()).queue();
+        return true;
     }
 }

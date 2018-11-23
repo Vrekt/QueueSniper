@@ -2,12 +2,12 @@ package me.vrekt.queuesniper.database;
 
 import me.vrekt.queuesniper.QSLogger;
 import me.vrekt.queuesniper.guild.GuildConfiguration;
-import me.vrekt.queuesniper.guild.RawGuildConfiguration;
-import me.vrekt.queuesniper.guild.setup.GuildSetupConfiguration;
+import me.vrekt.queuesniper.guild.GuildConfigurationFactory;
+import me.vrekt.queuesniper.guild.dump.DumpableGuildConfiguration;
+import me.vrekt.queuesniper.guild.register.GuildRegisterConfiguration;
 import me.vrekt.queuesniper.utility.CheckUtility;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.Guild;
-import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Role;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.VoiceChannel;
@@ -28,118 +28,96 @@ import java.util.concurrent.Future;
 
 public class DatabaseManager {
 
-    /**
-     * Load the database file async.
-     *
-     * @param jda the JDA instance
-     * @return true if reading succeeded, false otherwise.
-     */
-    public boolean load(final JDA jda) {
-        final ExecutorService service = Executors.newSingleThreadExecutor();
-        Future<Boolean> loadOperation = service.submit(() -> loadAsync(jda));
+    private final ExecutorService service = Executors.newCachedThreadPool();
 
-        boolean result;
+    public boolean load(JDA jda) {
+        Future<Boolean> result = service.submit(() -> loadAsync(jda));
+
         try {
-            result = loadOperation.get();
+            return result.get();
         } catch (InterruptedException | ExecutionException exception) {
-            exception.printStackTrace();
             return false;
         }
-        service.shutdown();
-        return result;
     }
 
-    /**
-     * Load the database file async.
-     *
-     * @param jda the JDA instance
-     * @return true if reading succeeded, false otherwise.
-     */
-    private boolean loadAsync(final JDA jda) {
+    private boolean loadAsync(JDA jda) {
         File file = new File("database.yaml");
         if (!file.exists()) {
-            QSLogger.log(null, "Could not find database file 'database.yaml' ensure it is in the same directory as this jar!");
+            QSLogger.log("Database file not found!");
             return false;
         }
+
         try {
             InputStream stream = new FileInputStream(file);
-
             Yaml yaml = new Yaml();
+
             Map<String, Object> data = yaml.load(stream);
 
             if (data == null || data.isEmpty()) {
                 return true;
             }
 
-            for (String id : data.keySet()) {
-                Object object = data.get(id);
-                if (object instanceof RawGuildConfiguration) {
-                    RawGuildConfiguration rawGuildConfiguration = (RawGuildConfiguration) object;
-                    Guild guild = jda.getGuildById(id);
+            for (String guildId : data.keySet()) {
+                Object obj = data.get(guildId);
+                if (obj instanceof DumpableGuildConfiguration) {
+                    DumpableGuildConfiguration configurable = (DumpableGuildConfiguration) obj;
+
+                    Guild guild = jda.getGuildById(guildId);
                     if (guild == null) {
-                        // no longer valid;
+                        QSLogger.log("Could not load guild: " + guildId + ", this guild is no longer using QueueSniper.");
                         continue;
                     }
 
-                    Member self = guild.getSelfMember();
-                    Role administratorRole = guild.getRoleById(rawGuildConfiguration.getAdministratorRoleId());
-                    Role announcementRole = guild.getRoleById(rawGuildConfiguration.getAnnouncementRoleId());
+                    GuildConfiguration configuration = new GuildConfiguration(guildId, guild, guild.getSelfMember(), guild.getPublicRole());
 
-                    TextChannel announcementChannel = guild.getTextChannelById(rawGuildConfiguration.getAnnouncementChannelId());
-                    TextChannel playerCodesChannel = guild.getTextChannelById(rawGuildConfiguration.getPlayerCodesChannelId());
+                    // verify the guilds setup is still valid
+                    Role controlRole = guild.getRoleById(configurable.controlRoleId);
+                    Role announcementRole = guild.getRoleById(configurable.announcementRoleId);
 
-                    VoiceChannel countdownChannel = guild.getVoiceChannelById(rawGuildConfiguration.getCountdownChannelId());
-                    int countdownTimeout = rawGuildConfiguration.getCountdownTimeout();
+                    TextChannel announcementChannel = guild.getTextChannelById(configurable.announcementChannelId);
+                    TextChannel codesChannel = guild.getTextChannelById(configurable.codesChannelId);
 
-                    if (CheckUtility.anyNull(administratorRole, announcementRole, announcementChannel, playerCodesChannel,
+                    VoiceChannel countdownChannel = guild.getVoiceChannelById(configurable.countdownChannelId);
+                    int timeout = configurable.timeout;
+                    if (CheckUtility.anyNull(controlRole, announcementRole, announcementChannel, codesChannel,
                             countdownChannel)) {
-                        // QueueSniper needs to be setup again
-                        QSLogger.log(null, "Guild: " + id + ":" + guild.getName() + " will need to be setup again.");
-                        GuildConfiguration.add(new GuildConfiguration(id, guild, self, guild.getPublicRole()).
-                                setGuildSetupConfiguration(new GuildSetupConfiguration(false)));
+                        QSLogger.log("Guild: " + guildId + ":" + guild.getName() + " will need to be setup again.");
+                        GuildConfigurationFactory.add(configuration);
                         continue;
                     }
 
-                    GuildConfiguration configuration = new GuildConfiguration(id, guild, self, guild.getPublicRole());
-                    GuildConfiguration.add(configuration.setGuildSetupConfiguration(new GuildSetupConfiguration(true)).setAdministratorRole(administratorRole).setAnnouncementRole(announcementRole).setAnnouncementChannel(announcementChannel).setPlayerCodesChannel(playerCodesChannel).setCountdownChannel(countdownChannel).setCountdownTimeout(countdownTimeout));
+                    configuration.setControlRole(controlRole).setAnnouncementRole(announcementRole).setAnnouncementChannel(announcementChannel).
+                            setCodesChannel(codesChannel).setCountdownChannel(countdownChannel).setTimeout(timeout);
+                    configuration.setRegisterConfiguration(new GuildRegisterConfiguration(true));
+
+                    GuildConfigurationFactory.add(configuration);
+                    QSLogger.log(configuration, "Finished loading guild!");
                 }
             }
-
-            stream.close();
         } catch (IOException exception) {
             exception.printStackTrace();
-            return false;
         }
-        QSLogger.log(null, "Finished reading database");
         return true;
     }
 
-    /**
-     * Save the database file async.
-     *
-     * @return true if saving succeeded, false otherwise.
-     */
-    public boolean save() {
-        final ExecutorService service = Executors.newSingleThreadExecutor();
-        Future<Boolean> saveOperation = service.submit(() -> saveAsync(new File("database.yaml")));
+    public boolean save(File file) {
+        Future<Boolean> result = service.submit(() -> saveAsync(file));
         try {
-            boolean result = saveOperation.get();
-            service.shutdownNow();
-            return result;
+            return result.get();
         } catch (InterruptedException | ExecutionException exception) {
-            exception.printStackTrace();
             return false;
         }
     }
 
-    /**
-     * Save the database file async.
-     *
-     * @return true if saving succeeded, false otherwise.
-     */
     private boolean saveAsync(File file) {
         if (!file.exists()) {
-            QSLogger.log(null, "Could not find database file 'database.yaml' ensure it is in the same directory as this jar!");
+            try {
+                if (!file.createNewFile()) {
+                    return false;
+                }
+            } catch (IOException exception) {
+                return false;
+            }
             return false;
         }
 
@@ -149,44 +127,23 @@ public class DatabaseManager {
 
         Yaml yaml = new Yaml(options);
         try {
-            FileWriter writer = new FileWriter(file);
-            final Map<String, RawGuildConfiguration> dump = new HashMap<>();
-            final Map<String, GuildConfiguration> data = GuildConfiguration.getConfigurationMap();
+            final Map<String, GuildConfiguration> data = GuildConfigurationFactory.getConfigurationMap();
+
             if (data.isEmpty()) {
                 return true;
             }
 
-            data.forEach((id, guildConfiguration) -> {
-                RawGuildConfiguration raw = guildConfiguration.dump();
-                if (raw != null) {
-                    dump.put(id, raw);
-                }
-            });
+            FileWriter writer = new FileWriter(file);
+            final Map<String, DumpableGuildConfiguration> dump = new HashMap<>();
+            data.forEach((guildId, configuration) -> dump.put(guildId, configuration.dump()));
 
             yaml.dump(dump, writer);
             writer.flush();
             writer.close();
+
         } catch (IOException exception) {
             return false;
         }
         return true;
     }
-
-    /**
-     * Final attempt to save the database.
-     */
-    public void attemptSave() {
-        final ExecutorService service = Executors.newSingleThreadExecutor();
-        File f = new File("database-backup-" + System.currentTimeMillis() + ".yaml");
-        try {
-            boolean t = f.createNewFile();
-            if (t) {
-                service.execute(() -> saveAsync(f));
-            }
-
-        } catch (IOException exception) {
-            System.out.println("failed to backup database :(");
-        }
-    }
-
 }
