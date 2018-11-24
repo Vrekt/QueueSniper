@@ -32,6 +32,7 @@ Once QueueSniper is in your server run ".setup". Ensure QueueSniper has all the 
 If the bot is not sending messages or is unable to talk in voice channels:
   - Ensure it has proper permissions (**Send Messages**, **Read Messages**, **Read Message History**)
   - Ensure it has proper voice permissions (**Connect**, **Speak**, **Use Voice Activity**, **Priority Speaker**)
+  If it is still not sending messages kick and re-add the bot.
   
 If you still need help you can PM me on discord: vrekt#4387
 
