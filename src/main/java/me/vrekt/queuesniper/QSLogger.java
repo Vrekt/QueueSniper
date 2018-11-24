@@ -9,7 +9,7 @@ import java.util.TimeZone;
 
 public class QSLogger {
 
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("hh:mm:ss a");
     private static final ZoneId ZONE_ID = TimeZone.getTimeZone("CST").toZoneId();
 
     public static void log(String info) {

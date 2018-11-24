@@ -17,10 +17,11 @@ public class MatchHandler {
 
     private final Map<GuildConfiguration, List<Long>> queuedMatches = new HashMap<>();
     private final Map<GuildConfiguration, List<MatchCollector>> startedMatches = new HashMap<>();
-    private final VoiceCountdownHandler voiceCountdownHandler = new VoiceCountdownHandler();
+    private final VoiceCountdownHandler voiceCountdownHandler;
     private final JDA jda;
 
     public MatchHandler(JDA jda) {
+        voiceCountdownHandler = new VoiceCountdownHandler();
         this.jda = jda;
         new ScheduledThreadPoolExecutor(1).scheduleWithFixedDelay(this::process, 1, 1, TimeUnit.SECONDS);
     }

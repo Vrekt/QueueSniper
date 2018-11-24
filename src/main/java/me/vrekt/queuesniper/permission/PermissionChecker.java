@@ -12,7 +12,7 @@ public class PermissionChecker {
 
     private static final Permission[] TEXT_PERMISSIONS = new Permission[]{Permission.MESSAGE_WRITE, Permission.MESSAGE_READ,
             Permission.MESSAGE_MANAGE
-            , Permission.MESSAGE_HISTORY};
+            , Permission.MESSAGE_HISTORY, Permission.MESSAGE_EMBED_LINKS};
 
     private static final Permission[] VOICE_PERMISSIONS = new Permission[]{Permission.VOICE_CONNECT, Permission.VOICE_SPEAK,
             Permission.PRIORITY_SPEAKER};

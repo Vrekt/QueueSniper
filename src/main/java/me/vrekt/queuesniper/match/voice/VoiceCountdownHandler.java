@@ -10,6 +10,7 @@ import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
+import me.vrekt.queuesniper.QSEntry;
 import me.vrekt.queuesniper.QSLogger;
 import me.vrekt.queuesniper.match.voice.lavaplayer.LavaPlayerSendHandler;
 import me.vrekt.queuesniper.permission.PermissionChecker;
@@ -46,7 +47,7 @@ public class VoiceCountdownHandler {
         });
         player.setVolume(50);
 
-        playerManager.loadItem("countdown.mp3", new AudioLoadResultHandler() {
+        playerManager.loadItem(QSEntry.getConfiguration().getValue("countdown_audio"), new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
                 manager.setSpeakingMode(SpeakingMode.PRIORITY);

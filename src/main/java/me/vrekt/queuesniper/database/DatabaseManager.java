@@ -30,8 +30,8 @@ public class DatabaseManager {
 
     private final ExecutorService service = Executors.newCachedThreadPool();
 
-    public boolean load(JDA jda) {
-        Future<Boolean> result = service.submit(() -> loadAsync(jda));
+    public boolean load(JDA jda, String file) {
+        Future<Boolean> result = service.submit(() -> loadAsync(jda, file));
 
         try {
             return result.get();
@@ -40,11 +40,21 @@ public class DatabaseManager {
         }
     }
 
-    private boolean loadAsync(JDA jda) {
-        File file = new File("database.yaml");
+    private boolean loadAsync(JDA jda, String f) {
+        File file = new File(f);
         if (!file.exists()) {
-            QSLogger.log("Database file not found!");
-            return false;
+            try {
+                boolean t = file.createNewFile();
+                if (!t) {
+                    QSLogger.log("Could not create database file: " + f);
+                    return false;
+                } else {
+                    QSLogger.log("Created database file: " + f);
+                }
+            } catch (IOException exception) {
+                exception.printStackTrace();
+                return false;
+            }
         }
 
         try {
@@ -116,9 +126,9 @@ public class DatabaseManager {
                     return false;
                 }
             } catch (IOException exception) {
+                exception.printStackTrace();
                 return false;
             }
-            return false;
         }
 
         DumperOptions options = new DumperOptions();

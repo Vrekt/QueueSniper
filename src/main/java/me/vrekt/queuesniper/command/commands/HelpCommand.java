@@ -27,7 +27,8 @@ public class HelpCommand extends Command {
 
         EmbedBuilder permissions = new EmbedBuilder();
         permissions.setTitle("Required permissions: ");
-        permissions.addField("Text Permissions: ", "**Send Messages**, **Read Messages**, **Read Message History**", false);
+        permissions.addField("Text Permissions: ", "**Send Messages**, **Read Messages**, **Read Message History**, **Embed Links**",
+                false);
         permissions.addField("Voice Permissions: ", "**Connect**, **Speak**, **Use Voice Activity**, **Priority Speaker**", false);
         permissions.addField("General Permissions: ", "**Manage Channels**", false);
 
