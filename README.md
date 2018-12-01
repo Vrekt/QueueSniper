@@ -37,15 +37,21 @@ If the bot is not sending messages or is unable to talk in voice channels:
 If you still need help you can PM me on discord: vrekt#4387
 
 # Self hosting
-  # Requirements:
+
+First you need a few things:
     - JDK 8 or higher installed
     - Have java in your PATH (when installing jdk8 this is done automatically, most of the time).
 
+
 # Running
   - First head over to the [releases page](https://github.com/Vrekt/QueueSniper/releases) and download the JAR file.
+  
   - Next, create a directory to put the JAR file in, QueueSniper when run for the first time creates a few files.
+  
   - Then, open command prompt (depending on the directory you may have to run it has administrator) and go into the directory with the    JAR file.
-  - After that, type 'java -jar QueueSniper_main.jar <your token here>' (do not include the <>) if you don't have a discord bot token google how to get one.
+  
+  - After that, type 'java -jar QueueSniper_main.jar (your token here)' (do not include the parentheses) if you don't have a discord bot token google how to get one.
+  
   - Finally, verify it created the files 'configuration.yaml' and 'database.yaml', these files are used to configure and save guilds the bot as join.
 
 
