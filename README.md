@@ -55,5 +55,12 @@ First you need a few things:
   - Finally, verify it created the files 'configuration.yaml' and 'database.yaml', these files are used to configure and save guilds the bot as join.
 
 
+# Example
+```
+java -jar QueueSniper.jar SIKDH&93743bfhdjDIAS7647283423 
+```
+
+
+
 # Feedback
 If you found an issue or have a suggestion let me know by opening a new issue.
