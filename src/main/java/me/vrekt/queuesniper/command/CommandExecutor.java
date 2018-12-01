@@ -6,8 +6,8 @@ import me.vrekt.queuesniper.command.commands.RequeueCommand;
 import me.vrekt.queuesniper.command.commands.SetupCommand;
 import me.vrekt.queuesniper.command.commands.StartCommand;
 import me.vrekt.queuesniper.guild.GuildConfiguration;
-import me.vrekt.queuesniper.match.MatchHandler;
-import me.vrekt.queuesniper.permission.PermissionChecker;
+import me.vrekt.queuesniper.match.GuildMatchHandler;
+import me.vrekt.queuesniper.result.MessageActionHandler;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.TextChannel;
@@ -18,7 +18,8 @@ import java.util.List;
 import java.util.Map;
 
 public class CommandExecutor {
-    private final Map<GuildConfiguration, Map<Command, Long>> guildCommandHistory = new HashMap<>();
+
+    private final Map<String, Map<String, Long>> guildCommandHistory = new HashMap<>();
     private final List<Command> commands = new ArrayList<>();
     private final JDA jda;
 
@@ -26,15 +27,14 @@ public class CommandExecutor {
         this.jda = jda;
     }
 
-    public void initializeCommands() {
+    public void initializeCommands(GuildMatchHandler matchHandler) {
         QSLogger.log("Registering commands {Help, Setup, Start, Requeue}");
 
         commands.add(new SetupCommand("setup", new String[]{"register"}, 1000, jda));
         commands.add(new HelpCommand("help", new String[]{"halp", "permissions"}, 1000, jda));
 
-        MatchHandler handler = new MatchHandler(jda);
-        commands.add(new StartCommand("start", new String[]{"queue", "run"}, 30000, handler, jda));
-        commands.add(new RequeueCommand("requeue", new String[]{"requeue", "req", "restart"}, 30000, handler, jda));
+        commands.add(new StartCommand("start", new String[]{}, 30000, matchHandler));
+        commands.add(new RequeueCommand("requeue", new String[]{"req", "restart"}, 30000, matchHandler));
     }
 
     /**
@@ -50,39 +50,38 @@ public class CommandExecutor {
         String[] arguments = input.split(" ");
         String commandName = arguments[0];
 
-        if (!PermissionChecker.hasTextPermissions(sentIn, configuration.getSelf())) {
-            return;
-        }
-
         Command execute = find(commandName);
         if (execute != null) {
-            if (!guildCommandHistory.containsKey(configuration)) {
-                Map<Command, Long> map = new HashMap<>();
-                map.put(execute, System.currentTimeMillis());
-                guildCommandHistory.put(configuration, map);
-            } else {
-                long cooldown = execute.getCooldown();
-                Map<Command, Long> history = guildCommandHistory.get(configuration);
-                if (history.containsKey(execute)) {
-                    long lastExecute = history.get(execute);
-                    long elapsed = System.currentTimeMillis() - lastExecute;
-                    if (elapsed < cooldown) {
-                        sentIn.sendMessage("This command has a " + cooldown / 1000 + " second cooldown.").queue();
-                        return;
-                    } else {
-                        history.remove(execute);
-                    }
+            String guildId = configuration.getGuildId();
+
+            // command never executed in the guild
+            if (!guildCommandHistory.containsKey(guildId)) {
+                guildCommandHistory.put(guildId, new HashMap<>());
+            }
+
+            Map<String, Long> history = guildCommandHistory.get(guildId);
+            long lastExecuteTime = history.getOrDefault(execute.name, -1L);
+            if (lastExecuteTime != -1) {
+                long time = System.currentTimeMillis() - lastExecuteTime;
+                if (time < execute.cooldown) {
+                    MessageActionHandler.sendMessageToChannel(sentIn, "This command has a " + execute.cooldown / 1000 + " second " +
+                            "cool-down.");
+                    return;
                 } else {
-                    history.put(execute, System.currentTimeMillis());
+                    history.remove(execute.name);
                 }
             }
-            boolean result = execute.execute(arguments, from, sentIn, configuration);
-            if (!result) {
-                // remove from cooldown
-                if (guildCommandHistory.containsKey(configuration)) {
-                    guildCommandHistory.get(configuration).remove(execute);
-                }
+
+            execute.execute(arguments, from, sentIn, configuration);
+            if (!execute.failed) {
+                // if the command didn't fail to execute add it to the history map
+                history.put(execute.name, System.currentTimeMillis());
             }
+
+            guildCommandHistory.put(guildId, history);
+        } else {
+            MessageActionHandler.sendMessageToChannel(sentIn, "The command " + input + " does not exist! Refer to .help if you need help " +
+                    "using QueueSniper.");
         }
     }
 
@@ -93,7 +92,7 @@ public class CommandExecutor {
      * @return the command (if found), null otherwise.
      */
     private Command find(String commandName) {
-        return commands.stream().filter(command -> command.compare(commandName)).findAny().orElse(null);
+        return commands.stream().filter(command -> command.thisCommand(commandName)).findAny().orElse(null);
     }
 
 }

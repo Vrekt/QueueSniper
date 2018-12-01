@@ -2,9 +2,11 @@ package me.vrekt.queuesniper.command.commands;
 
 import me.vrekt.queuesniper.command.Command;
 import me.vrekt.queuesniper.guild.GuildConfiguration;
+import me.vrekt.queuesniper.result.MessageActionHandler;
 import net.dv8tion.jda.core.EmbedBuilder;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.Member;
+import net.dv8tion.jda.core.entities.MessageEmbed;
 import net.dv8tion.jda.core.entities.TextChannel;
 
 import java.awt.Color;
@@ -16,7 +18,7 @@ public class HelpCommand extends Command {
     }
 
     @Override
-    public boolean execute(String[] args, Member from, TextChannel sentIn, GuildConfiguration configuration) {
+    public void execute(String[] args, Member from, TextChannel sentIn, GuildConfiguration configuration) {
         EmbedBuilder message = new EmbedBuilder();
         message.setColor(new Color(64, 64, 64)).setAuthor("QueueSniper help").setTitle("Administrator commands: ");
 
@@ -25,15 +27,17 @@ public class HelpCommand extends Command {
         message.addField(".requeue <server ids>", " - This command will alert players that they should requeue. If no server ids are " +
                 "entered, players will be notified it is a full requeue.", false);
 
+
         EmbedBuilder permissions = new EmbedBuilder();
-        permissions.setTitle("Required permissions: ");
+        permissions.setTitle("All permissions below are required for QueueSniper to work correctly!");
         permissions.addField("Text Permissions: ", "**Send Messages**, **Read Messages**, **Read Message History**, **Embed Links**",
                 false);
-        permissions.addField("Voice Permissions: ", "**Connect**, **Speak**, **Use Voice Activity**, **Priority Speaker**", false);
+        permissions.addField("Voice Permissions: ", "**Connect**, **Speak**, **Use Voice Activity**", false);
         permissions.addField("General Permissions: ", "**Manage Channels**", false);
 
-        sentIn.sendMessage(permissions.build()).queue();
-        sentIn.sendMessage(message.build()).queue();
-        return true;
+        MessageEmbed permissionEmbed = permissions.build();
+        MessageEmbed messageEmbed = message.build();
+
+        MessageActionHandler.sendMessagesToChannel(sentIn, messageEmbed, permissionEmbed).handleFailure(msg -> failed = true);
     }
 }

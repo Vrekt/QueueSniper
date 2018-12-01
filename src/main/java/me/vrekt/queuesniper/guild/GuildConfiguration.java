@@ -1,7 +1,6 @@
 package me.vrekt.queuesniper.guild;
 
-import me.vrekt.queuesniper.guild.dump.DumpableGuildConfiguration;
-import me.vrekt.queuesniper.guild.register.GuildRegisterConfiguration;
+import me.vrekt.queuesniper.guild.setup.GuildSetupConfiguration;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Role;
@@ -14,7 +13,7 @@ public class GuildConfiguration {
     private final Guild guild;
     private final Member self;
 
-    private Role publicRole;
+    private final Role publicRole;
     private Role controlRole;
     private Role announcementRole;
 
@@ -22,22 +21,22 @@ public class GuildConfiguration {
     private TextChannel codesChannel;
     private VoiceChannel countdownChannel;
 
-    private int timeout;
-    private GuildRegisterConfiguration registerConfiguration = new GuildRegisterConfiguration(false);
+    private int countdownTimeout;
+    private GuildSetupConfiguration setupConfiguration;
 
-    public GuildConfiguration(String guildId, Guild guild, Member self, Role publicRole) {
-        this.guildId = guildId;
-        this.guild = guild;
-        this.self = self;
-        this.publicRole = publicRole;
-    }
+    public GuildConfiguration(GuildConfigurationBuilder builder) {
+        this.guildId = builder.getGuildId();
+        this.guild = builder.getGuild();
+        this.self = builder.getSelf();
+        this.publicRole = builder.getPublicRole();
 
-    public GuildRegisterConfiguration getRegisterConfiguration() {
-        return registerConfiguration;
-    }
+        this.controlRole = builder.getControlRole();
+        this.announcementRole = builder.getAnnouncementRole();
+        this.announcementChannel = builder.getAnnouncementChannel();
+        this.codesChannel = builder.getCodesChannel();
+        this.countdownChannel = builder.getCountdownChannel();
 
-    public void setRegisterConfiguration(GuildRegisterConfiguration registerConfiguration) {
-        this.registerConfiguration = registerConfiguration;
+        this.countdownTimeout = builder.getCountdownTimeout();
     }
 
     public String getGuildId() {
@@ -60,57 +59,65 @@ public class GuildConfiguration {
         return controlRole;
     }
 
-    public GuildConfiguration setControlRole(Role role) {
-        this.controlRole = role;
-        return this;
+    public void setControlRole(Role controlRole) {
+        this.controlRole = controlRole;
     }
 
     public Role getAnnouncementRole() {
         return announcementRole;
     }
 
-    public GuildConfiguration setAnnouncementRole(Role role) {
-        this.announcementRole = role;
-        return this;
+    public void setAnnouncementRole(Role announcementRole) {
+        this.announcementRole = announcementRole;
     }
 
     public TextChannel getAnnouncementChannel() {
         return announcementChannel;
     }
 
-    public GuildConfiguration setAnnouncementChannel(TextChannel channel) {
-        this.announcementChannel = channel;
-        return this;
+    public void setAnnouncementChannel(TextChannel announcementChannel) {
+        this.announcementChannel = announcementChannel;
     }
 
     public TextChannel getCodesChannel() {
         return codesChannel;
     }
 
-    public GuildConfiguration setCodesChannel(TextChannel channel) {
-        this.codesChannel = channel;
-        return this;
+    public void setCodesChannel(TextChannel codesChannel) {
+        this.codesChannel = codesChannel;
     }
 
     public VoiceChannel getCountdownChannel() {
         return countdownChannel;
     }
 
-    public GuildConfiguration setCountdownChannel(VoiceChannel channel) {
-        this.countdownChannel = channel;
-        return this;
+    public void setCountdownChannel(VoiceChannel countdownChannel) {
+        this.countdownChannel = countdownChannel;
     }
 
-    public int getTimeout() {
-        return timeout;
+    public int getCountdownTimeout() {
+        return countdownTimeout;
     }
 
-    public void setTimeout(int timeout) {
-        this.timeout = timeout;
+    public void setCountdownTimeout(int countdownTimeout) {
+        this.countdownTimeout = countdownTimeout;
     }
 
-    public DumpableGuildConfiguration dump() {
-        DumpableGuildConfiguration dump = new DumpableGuildConfiguration();
+    public GuildSetupConfiguration getSetupConfiguration() {
+        return setupConfiguration;
+    }
+
+    public void setRegisterConfiguration(GuildSetupConfiguration setupConfiguration) {
+        this.setupConfiguration = setupConfiguration;
+    }
+
+    public YamlGuildConfiguration dump() {
+        YamlGuildConfiguration dump = new YamlGuildConfiguration();
+
+        // ignore if any fields are null
+        if (guildId == null || controlRole == null || announcementRole == null || announcementChannel == null || codesChannel == null || countdownChannel == null) {
+            return null;
+        }
 
         dump.guildId = guildId;
         dump.controlRoleId = controlRole.getId();
@@ -118,7 +125,7 @@ public class GuildConfiguration {
         dump.announcementChannelId = announcementChannel.getId();
         dump.codesChannelId = codesChannel.getId();
         dump.countdownChannelId = countdownChannel.getId();
-        dump.timeout = timeout;
+        dump.countdownTimeout = countdownTimeout;
         return dump;
     }
 

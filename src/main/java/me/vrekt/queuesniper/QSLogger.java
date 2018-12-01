@@ -20,7 +20,7 @@ public class QSLogger {
         System.out.println("[" + now() + "] [" + configuration.getGuildId() + ":{" + configuration.getGuild().getName() + "}] " + info);
     }
 
-    public static String now() {
+    private static String now() {
         return ZonedDateTime.now(ZONE_ID).format(FORMATTER);
     }
 

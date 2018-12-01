@@ -1,11 +1,10 @@
 package me.vrekt.queuesniper.database;
 
-import me.vrekt.queuesniper.QSLogger;
 import me.vrekt.queuesniper.guild.GuildConfiguration;
+import me.vrekt.queuesniper.guild.GuildConfigurationBuilder;
 import me.vrekt.queuesniper.guild.GuildConfigurationFactory;
-import me.vrekt.queuesniper.guild.dump.DumpableGuildConfiguration;
-import me.vrekt.queuesniper.guild.register.GuildRegisterConfiguration;
-import me.vrekt.queuesniper.utility.CheckUtility;
+import me.vrekt.queuesniper.guild.YamlGuildConfiguration;
+import me.vrekt.queuesniper.guild.setup.GuildSetupConfiguration;
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.Role;
@@ -19,7 +18,9 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -28,107 +29,151 @@ import java.util.concurrent.Future;
 
 public class DatabaseManager {
 
-    private final ExecutorService service = Executors.newCachedThreadPool();
-
+    /**
+     * Loads the database async
+     *
+     * @param jda  jda
+     * @param file the file location
+     * @return false if loading failed.
+     */
     public boolean load(JDA jda, String file) {
+        ExecutorService service = Executors.newSingleThreadExecutor();
         Future<Boolean> result = service.submit(() -> loadAsync(jda, file));
 
         try {
             return result.get();
         } catch (InterruptedException | ExecutionException exception) {
+            exception.printStackTrace();
             return false;
         }
     }
 
-    private boolean loadAsync(JDA jda, String f) {
-        File file = new File(f);
-        if (!file.exists()) {
-            try {
-                boolean t = file.createNewFile();
-                if (!t) {
-                    QSLogger.log("Could not create database file: " + f);
-                    return false;
-                } else {
-                    QSLogger.log("Created database file: " + f);
-                }
-            } catch (IOException exception) {
-                exception.printStackTrace();
-                return false;
+    /**
+     * Attempts to load the database.
+     * This method should be called on another thread.
+     *
+     * @param jda          jda
+     * @param fileLocation the file location
+     * @return false if loading failed.
+     */
+    private boolean loadAsync(JDA jda, String fileLocation) {
+        File file = new File(fileLocation);
+        try {
+            if (file.createNewFile()) {
+                return true;
             }
+        } catch (IOException exception) {
+            exception.printStackTrace();
+            return false;
         }
 
-        try {
-            InputStream stream = new FileInputStream(file);
+        List<String> invalidKeys = new ArrayList<>();
+        try (InputStream fs = new FileInputStream(file)) {
             Yaml yaml = new Yaml();
 
-            Map<String, Object> data = yaml.load(stream);
-
+            Map<String, Object> data = yaml.load(fs);
             if (data == null || data.isEmpty()) {
                 return true;
             }
 
             for (String guildId : data.keySet()) {
-                Object obj = data.get(guildId);
-                if (obj instanceof DumpableGuildConfiguration) {
-                    DumpableGuildConfiguration configurable = (DumpableGuildConfiguration) obj;
-
+                Object object = data.get(guildId);
+                if (object instanceof YamlGuildConfiguration) {
+                    YamlGuildConfiguration configurationData = (YamlGuildConfiguration) object;
                     Guild guild = jda.getGuildById(guildId);
+
                     if (guild == null) {
-                        QSLogger.log("Could not load guild: " + guildId + ", this guild is no longer using QueueSniper.");
+                        invalidKeys.add(guildId);
                         continue;
                     }
 
-                    GuildConfiguration configuration = new GuildConfiguration(guildId, guild, guild.getSelfMember(), guild.getPublicRole());
+                    GuildConfigurationBuilder builder = new GuildConfigurationBuilder(guildId, guild, guild.getSelfMember(),
+                            guild.getPublicRole());
 
-                    // verify the guilds setup is still valid
-                    Role controlRole = guild.getRoleById(configurable.controlRoleId);
-                    Role announcementRole = guild.getRoleById(configurable.announcementRoleId);
+                    // verify everything that was saved is still valid relative to the guild.
+                    Role controlRole = guild.getRoleById(configurationData.controlRoleId);
+                    Role announcementRole = guild.getRoleById(configurationData.announcementRoleId);
 
-                    TextChannel announcementChannel = guild.getTextChannelById(configurable.announcementChannelId);
-                    TextChannel codesChannel = guild.getTextChannelById(configurable.codesChannelId);
+                    TextChannel announcementChannel = guild.getTextChannelById(configurationData.announcementChannelId);
+                    TextChannel codesChannel = guild.getTextChannelById(configurationData.codesChannelId);
 
-                    VoiceChannel countdownChannel = guild.getVoiceChannelById(configurable.countdownChannelId);
-                    int timeout = configurable.timeout;
-                    if (CheckUtility.anyNull(controlRole, announcementRole, announcementChannel, codesChannel,
-                            countdownChannel)) {
-                        QSLogger.log("Guild: " + guildId + ":" + guild.getName() + " will need to be setup again.");
-                        GuildConfigurationFactory.add(configuration);
+                    VoiceChannel countdownChannel = guild.getVoiceChannelById(configurationData.countdownChannelId);
+                    int countdownTimeout = configurationData.countdownTimeout;
+
+                    // if anything is null add it to the invalid list and continue
+                    if (controlRole == null || announcementRole == null || announcementChannel == null || codesChannel == null || countdownChannel == null) {
+                        GuildConfigurationFactory.add(builder.build());
+                        invalidKeys.add(guildId);
                         continue;
                     }
 
-                    configuration.setControlRole(controlRole).setAnnouncementRole(announcementRole).setAnnouncementChannel(announcementChannel).
-                            setCodesChannel(codesChannel).setCountdownChannel(countdownChannel).setTimeout(timeout);
-                    configuration.setRegisterConfiguration(new GuildRegisterConfiguration(true));
+                    builder.setControlRole(controlRole).setAnnouncementRole(announcementRole).setAnnouncementChannel(announcementChannel).
+                            setCodesChannel(codesChannel).setCountdownChannel(countdownChannel).setCountdownTimeout(countdownTimeout);
 
+                    // build and add
+                    GuildConfiguration configuration = builder.build();
+                    configuration.setRegisterConfiguration(new GuildSetupConfiguration(true, configuration));
                     GuildConfigurationFactory.add(configuration);
-                    QSLogger.log(configuration, "Finished loading guild!");
                 }
             }
+
         } catch (IOException exception) {
             exception.printStackTrace();
+            return false;
         }
+
+        if (!invalidKeys.isEmpty()) {
+            cleanInvalidKeys(file, invalidKeys);
+        }
+
         return true;
     }
 
-    public boolean save(File file) {
+    /**
+     * Attempts to remove invalid guilds in the database file.
+     *
+     * @param file        the file
+     * @param invalidKeys a list of invalid keys
+     */
+    private void cleanInvalidKeys(File file, List<String> invalidKeys) {
+        Yaml yaml = new Yaml();
+
+    }
+
+    /**
+     * Attempts to save the database async.
+     *
+     * @param file the file
+     * @return false if saving failed.
+     */
+    public boolean save(String file) {
+        ExecutorService service = Executors.newSingleThreadExecutor();
         Future<Boolean> result = service.submit(() -> saveAsync(file));
+
         try {
             return result.get();
         } catch (InterruptedException | ExecutionException exception) {
+            exception.printStackTrace();
             return false;
         }
     }
 
-    private boolean saveAsync(File file) {
-        if (!file.exists()) {
-            try {
-                if (!file.createNewFile()) {
-                    return false;
-                }
-            } catch (IOException exception) {
-                exception.printStackTrace();
-                return false;
+    /**
+     * Attempts to save the database.
+     * This methods should be called on another thread
+     *
+     * @param fileLocation the file location
+     * @return false if saving failed.
+     */
+    private boolean saveAsync(String fileLocation) {
+        File file = new File(fileLocation);
+        try {
+            if (file.createNewFile()) {
+                System.out.println("WARNING: The database file was deleted, a new one will be created.");
+                System.out.println("Created database file: " + fileLocation);
             }
+        } catch (IOException exception) {
+            return false;
         }
 
         DumperOptions options = new DumperOptions();
@@ -136,24 +181,30 @@ public class DatabaseManager {
         options.setPrettyFlow(true);
 
         Yaml yaml = new Yaml(options);
-        try {
-            final Map<String, GuildConfiguration> data = GuildConfigurationFactory.getConfigurationMap();
+        try (FileWriter fs = new FileWriter(file)) {
+            Map<String, GuildConfiguration> data = GuildConfigurationFactory.getConfigurationMap();
 
             if (data.isEmpty()) {
+                fs.close();
                 return true;
             }
 
-            FileWriter writer = new FileWriter(file);
-            final Map<String, DumpableGuildConfiguration> dump = new HashMap<>();
-            data.forEach((guildId, configuration) -> dump.put(guildId, configuration.dump()));
-
-            yaml.dump(dump, writer);
-            writer.flush();
-            writer.close();
-
+            Map<String, YamlGuildConfiguration> dump = new HashMap<>();
+            data.forEach((key, value) -> {
+                YamlGuildConfiguration check = value.dump();
+                if (check == null) {
+                    // continue since the guild wasn't setup
+                    return;
+                }
+                dump.put(key, check);
+            });
+            yaml.dump(dump, fs);
         } catch (IOException exception) {
+            exception.printStackTrace();
             return false;
         }
+
         return true;
     }
+
 }
