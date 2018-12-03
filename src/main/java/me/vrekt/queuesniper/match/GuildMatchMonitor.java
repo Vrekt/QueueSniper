@@ -11,6 +11,7 @@ import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.entities.Member;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.TextChannel;
+import net.dv8tion.jda.core.exceptions.InsufficientPermissionException;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -37,7 +38,7 @@ public class GuildMatchMonitor implements MessageEventCallable {
     private final TemporaryMessageEvent event;
 
     private String serverCodesMessageId;
-    private boolean finished;
+    private boolean finished = false;
     private int fancy = 1;
 
     GuildMatchMonitor(GuildConfiguration configuration, JDA jda) {
@@ -55,16 +56,17 @@ public class GuildMatchMonitor implements MessageEventCallable {
 
         // queue the messages and handle the failure/success
         MessageActionHandler.sendMessageToChannel(mainChannel, matchInstructions.build()).handleFailure(message -> finished = true);
-
+        if (finished) {
+            return;
+        }
         matchInstructions.clear().setColor(new Color(30, 130, 89)).setAuthor("Current players and servers: ");
-        MessageActionHandler.sendMessageToChannel(mainChannel, matchInstructions.build()).handleSuccess(message -> {
-            if (message == null) {
-                // handle some weird internal error maybe
-                finished = true;
-            } else {
-                serverCodesMessageId = message.getId();
-            }
-        });
+
+        // futures are inconsistent
+        try {
+            mainChannel.sendMessage(matchInstructions.build()).queue(message -> serverCodesMessageId = message.getId());
+        } catch (InsufficientPermissionException exception) {
+            finished = true;
+        }
 
         // unlock the channel
         ChannelActionHandler.unlockChannel(codesChannel, configuration.getSelf(), configuration.getPublicRole(),

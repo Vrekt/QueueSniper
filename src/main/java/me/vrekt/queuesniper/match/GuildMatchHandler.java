@@ -1,5 +1,6 @@
 package me.vrekt.queuesniper.match;
 
+import me.vrekt.queuesniper.QSLogger;
 import me.vrekt.queuesniper.guild.GuildConfiguration;
 import me.vrekt.queuesniper.voice.VoiceCountdownHandler;
 import net.dv8tion.jda.core.JDA;
@@ -36,6 +37,7 @@ public class GuildMatchHandler {
      * @param configuration the guild that it was sent from
      */
     public void queueMatch(GuildConfiguration configuration) {
+        QSLogger.log(configuration, "Queued");
         if (!queuedMatches.containsKey(configuration)) {
             queuedMatches.put(configuration, new ArrayList<>());
         }

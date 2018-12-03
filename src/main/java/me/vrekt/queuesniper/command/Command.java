@@ -15,7 +15,7 @@ public abstract class Command {
     protected final long cooldown;
     protected JDA jda;
 
-    protected boolean failed;
+    protected boolean failed = false;
 
     protected Command(String name, String[] aliases, long cooldown, JDA jda) {
         this.name = name;

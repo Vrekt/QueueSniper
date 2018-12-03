@@ -1,11 +1,9 @@
 package me.vrekt.queuesniper.result;
 
-import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageEmbed;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.exceptions.ErrorResponseException;
 import net.dv8tion.jda.core.exceptions.InsufficientPermissionException;
-import net.dv8tion.jda.core.requests.RequestFuture;
 
 public class MessageActionHandler {
 
@@ -45,8 +43,7 @@ public class MessageActionHandler {
 
         ActionResult result = new ActionResult(false);
         try {
-            RequestFuture<Message> future = channel.sendMessage(message).submit(false);
-            result.setMessage(future.getNow(null));
+            channel.sendMessage(message).queue(result::setMessage);
         } catch (ErrorResponseException | InsufficientPermissionException exception) {
             return new ActionResult(true);
         }

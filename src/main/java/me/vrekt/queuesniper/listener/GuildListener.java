@@ -22,6 +22,7 @@ public class GuildListener {
 
         GuildConfigurationFactory.add(configuration);
         QSLogger.log(configuration, "QueueSniper has joined!");
+
     }
 
 }

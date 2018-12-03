@@ -7,6 +7,7 @@ import me.vrekt.queuesniper.listener.GuildListener;
 import me.vrekt.queuesniper.match.GuildMatchHandler;
 import me.vrekt.queuesniper.voice.VoiceCountdownHandler;
 import net.dv8tion.jda.core.JDA;
+import net.dv8tion.jda.core.entities.Game;
 import net.dv8tion.jda.core.events.ReadyEvent;
 import net.dv8tion.jda.core.hooks.SubscribeEvent;
 
@@ -27,6 +28,7 @@ public class QSRegister {
     @SubscribeEvent
     public void onJDAReady(ReadyEvent event) {
         JDA jda = event.getJDA();
+        jda.getPresence().setGame(Game.of(Game.GameType.DEFAULT, ".help | .setup"));
 
         configuration.load(configurationFile);
         databaseLoad(jda);
@@ -34,6 +36,7 @@ public class QSRegister {
         matchHandler = new GuildMatchHandler(jda, new VoiceCountdownHandler(configuration));
         jda.addEventListener(new GuildListener());
         jda.addEventListener(new CommandListener(jda, matchHandler));
+        System.out.println("Current working directory: " + QSEntry.WORKING_DIRECTORY);
     }
 
     /**

@@ -17,7 +17,7 @@ public class QSEntry {
 
         try {
             CodeSource source = QSEntry.class.getProtectionDomain().getCodeSource();
-            WORKING_DIRECTORY = new File(source.getLocation().toURI().getPath()).getParentFile().getPath() + "\\";
+            WORKING_DIRECTORY = new File(source.getLocation().toURI().getPath()).getParentFile().getPath() + File.separator;
         } catch (URISyntaxException exception) {
             exception.printStackTrace();
             return;
@@ -37,7 +37,7 @@ public class QSEntry {
         if (args.length > 1) {
             configurationFile = args[1];
         } else {
-            configurationFile = WORKING_DIRECTORY + "configuration.yaml";
+            configurationFile = WORKING_DIRECTORY + File.separator + "configuration.yaml";
         }
 
         try {

@@ -12,6 +12,7 @@ import net.dv8tion.jda.core.entities.TextChannel;
 import java.awt.Color;
 
 public class HelpCommand extends Command {
+    private final String version = "1.2";
 
     public HelpCommand(String name, String[] aliases, long cooldown, JDA jda) {
         super(name, aliases, cooldown, jda);
@@ -20,13 +21,17 @@ public class HelpCommand extends Command {
     @Override
     public void execute(String[] args, Member from, TextChannel sentIn, GuildConfiguration configuration) {
         EmbedBuilder message = new EmbedBuilder();
-        message.setColor(new Color(64, 64, 64)).setAuthor("QueueSniper help").setTitle("Administrator commands: ");
+        message.setColor(new Color(64, 64, 64)).setAuthor("QueueSniper help [Version: " + version + "]").setTitle("Administrator " +
+                "commands: ");
 
         message.addField(".setup", "- This command is used to setup QueueSniper.", false);
         message.addField(".start <playlist>", "- This is the default command to start snipe matches.", false);
         message.addField(".requeue <server ids>", " - This command will alert players that they should requeue. If no server ids are " +
                 "entered, players will be notified it is a full requeue.", false);
+        message.addBlankField(false);
 
+        // updates
+        message.addField("Updates: ", "- " + version + ": Better reliability and small fixes.", false);
 
         EmbedBuilder permissions = new EmbedBuilder();
         permissions.setTitle("All permissions below are required for QueueSniper to work correctly!");
